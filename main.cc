@@ -36,7 +36,7 @@ int main(int argc, char** argv){
 	int start_v;
 	int vertex_count;
 	int edge_count;
-	
+	Vertex* tmpnode;
 	vertex_count=get_node_count(nm);
 	edge_count=get_edge_count(nm);
 	int vertex_degree[vertex_count];
@@ -54,8 +54,8 @@ int main(int argc, char** argv){
 		}
 		int odd_degree_pair=odd_degree_count/2;
 		for(int i=0;i<odd_degree_pair;i++){
-			cout<<"Connect "<<odd_degree_list[i]->name<<" and "<<odd_degree_list[i+1]->name<<endl;
-			nm->connect(odd_degree_list[i]->name,odd_degree_list[i+1]->name);
+			cout<<"Connect "<<odd_degree_list[i*2]->name<<" and "<<odd_degree_list[i*2+1]->name<<endl;
+			nm->connect(odd_degree_list[i*2]->name,odd_degree_list[i*2+1]->name);
 		}
 	}
 	nm->print_all_v();
@@ -76,15 +76,22 @@ int main(int argc, char** argv){
 
 	cout<<"next node is "<<nextnode->name<<endl;
 	vertex_push(tmppath,nextnode,sp1);
+	nm->print_all_e();
 	nm->disconnect(nm->vlist[start_v]->name,nextnode->name);
+	nm->print_all_e();
 	curnode=nextnode;
 	nextnode=findnextnode(nm,curnode,vertex_count);
 	while(nextnode!=NULL){
 		vertex_push(tmppath,nextnode,sp1);
-		if(nm->connected_d(curnode->name,nextnode->name))
+		if(nm->connected_d(nextnode->name,curnode->name)==0){
+			nm->print_all_e();
 			nm->disconnect(nextnode->name,curnode->name);
-		else
+		}
+		else{
+			nm->print_all_e();
 			nm->disconnect(curnode->name,nextnode->name);
+			nm->print_all_e();
+		}
 		curnode=nextnode;
 		nextnode=findnextnode(nm,curnode,vertex_count);
 		
@@ -95,7 +102,8 @@ int main(int argc, char** argv){
 	nm->print_all_e();
 	if(nm->elist!=NULL){
 		curnode=vertex_pop(tmppath,sp1);
-		while(curnode!=NULL){
+
+		while(nm->elist!=NULL){
 			if(findnextnode(nm,curnode,vertex_count)==NULL){
 				vertex_push(Resultpath,curnode,sp2);
 				curnode=vertex_pop(tmppath,sp1);
@@ -103,12 +111,27 @@ int main(int argc, char** argv){
 			else {
 				nextnode=findnextnode(nm,curnode,vertex_count);
 				vertex_push(tmppath,nextnode,sp1);
-				nm->disconnect(curnode->name,nextnode->name);
+				cout<<"curnode is "<<curnode->name<<endl;
+				cout<<"nextnode is "<<nextnode->name<<endl;
+				if(nm->connected_d(nextnode->name,curnode->name)==0){
+					nm->print_all_e();
+					nm->disconnect(nextnode->name,curnode->name);
+					nm->print_all_e();
+					cout<<"br1"<<endl;
+				}
+				else if(nm->connected_d(curnode->name,nextnode->name)==0){
+					nm->print_all_e();
+					nm->disconnect(curnode->name,nextnode->name);
+					nm->print_all_e();
+					cout<<"br2"<<endl;
+				}
+				
 				curnode=nextnode;
+				cout<<"curnode is "<<curnode->name<<endl;
 			}
 		}
 	}
-	
+	cout<<"ALL EDGE"<<endl;
 	curnode=vertex_pop(tmppath,sp1);
 	while(curnode!=NULL){
 		vertex_push(Resultpath,curnode,sp2);
@@ -187,13 +210,14 @@ int Euler_circuit_check(NetworkManager *nm,int v_count,int e_count,int *degree){
 
 }
 void vertex_push(Vertex** v_array,Vertex *v,int& sp){
-	cout<<"push"<<v->name<<endl;
+	cout<<"push "<<v->name<<endl;
 	v_array[sp]=v;
 	sp++;
 }
 Vertex* vertex_pop(Vertex** v_array,int& sp){
 	if(sp!=0){
 		sp--;
+		cout<<"pop "<<v_array[sp]->name<<endl;
 		return v_array[sp];
 	}
 	else
