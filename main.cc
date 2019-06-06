@@ -13,9 +13,10 @@ using namespace std;
 NetworkManager *nm = new NetworkManager();
 int get_node_count(NetworkManager *nm);
 int get_edge_count(NetworkManager *nm);
-int Euler_circuit_check(NetworkManager *nm,int v_count,int e_count);
-
-
+int Euler_circuit_check(NetworkManager *nm,int v_count,int e_count,int *degree);
+void vertex_push(Vertex** v_array,Vertex *v,int& sp);
+Vertex* vertex_pop(Vertex** v_array,int& sp);
+Vertex* findnextnode(NetworkManager *nm,Vertex* curnode,int v_count);
 int main(int argc, char** argv){
 	
 	if(argc<2){
@@ -28,27 +29,119 @@ int main(int argc, char** argv){
 	nm->print_all_v();
 	nm->print_all_e();
 	
+	Gplot *Inputgp=new Gplot();
+	Inputgp->gp_add(nm->elist);
+	Inputgp->gp_dump(true);
+	Inputgp->gp_export("inputgraph");
+	int start_v;
 	int vertex_count;
 	int edge_count;
+	
 	vertex_count=get_node_count(nm);
 	edge_count=get_edge_count(nm);
-	Euler_circuit_check(nm,vertex_count,edge_count);
-	/*if(Euler_circuit_check(nm)==1)
-		//Find Euler_circuit;
-	else
-		//*/
+	int vertex_degree[vertex_count];
+	//判斷connect
+	if(Euler_circuit_check(nm,vertex_count,edge_count,vertex_degree)==0){
+		//歐拉化
+		int odd_degree_count=0;
+		Vertex *odd_degree_list[vertex_count];
+		for(int i=0;i<vertex_count;i++){
+			cout<<vertex_degree[i]<<endl;
+			if(vertex_degree[i]%2!=0){
+				odd_degree_list[odd_degree_count]=nm->vlist[i];
+				odd_degree_count++;
+			}
+		}
+		int odd_degree_pair=odd_degree_count/2;
+		for(int i=0;i<odd_degree_pair;i++){
+			cout<<"Connect "<<odd_degree_list[i]->name<<" and "<<odd_degree_list[i+1]->name<<endl;
+			nm->connect(odd_degree_list[i]->name,odd_degree_list[i+1]->name);
+		}
+	}
+	nm->print_all_v();
+	nm->print_all_e();
+
+	//Find Euler_circuit;
+	start_v=0;
+	//for(int i=0;i<v_count;i++)
+	Vertex *nextnode,*curnode;
+	Vertex* tmppath[edge_count+1];
+	Vertex* Resultpath[edge_count+1];
+	int sp1=0;
+	int sp2=0;
+	vertex_push(tmppath,nm->vlist[start_v],sp1);
+	curnode=nm->vlist[start_v];
+	cout<<"cur node is "<<curnode->name<<endl;
+	nextnode=findnextnode(nm,curnode,vertex_count);
+
+	cout<<"next node is "<<nextnode->name<<endl;
+	vertex_push(tmppath,nextnode,sp1);
+	nm->disconnect(nm->vlist[start_v]->name,nextnode->name);
+	curnode=nextnode;
+	nextnode=findnextnode(nm,curnode,vertex_count);
+	while(nextnode!=NULL){
+		vertex_push(tmppath,nextnode,sp1);
+		if(nm->connected_d(curnode->name,nextnode->name))
+			nm->disconnect(nextnode->name,curnode->name);
+		else
+			nm->disconnect(curnode->name,nextnode->name);
+		curnode=nextnode;
+		nextnode=findnextnode(nm,curnode,vertex_count);
+		
+	}
+
 	
+	nm->print_all_v();
+	nm->print_all_e();
+	if(nm->elist!=NULL){
+		curnode=vertex_pop(tmppath,sp1);
+		while(curnode!=NULL){
+			if(findnextnode(nm,curnode,vertex_count)==NULL){
+				vertex_push(Resultpath,curnode,sp2);
+				curnode=vertex_pop(tmppath,sp1);
+			}
+			else {
+				nextnode=findnextnode(nm,curnode,vertex_count);
+				vertex_push(tmppath,nextnode,sp1);
+				nm->disconnect(curnode->name,nextnode->name);
+				curnode=nextnode;
+			}
+		}
+	}
+	
+	curnode=vertex_pop(tmppath,sp1);
+	while(curnode!=NULL){
+		vertex_push(Resultpath,curnode,sp2);
+		curnode=vertex_pop(tmppath,sp1);
+	}
+	NetworkManager *result= new NetworkManager();
+	nextnode=vertex_pop(Resultpath,sp2);
+	while(nextnode!=NULL){
+		curnode=nextnode;
+		result->add_switch(curnode->name);
+		nextnode=vertex_pop(Resultpath,sp2);
+		if(nextnode!=NULL){
+			result->add_switch(nextnode->name);
+			result->connect(curnode->name,nextnode->name);
+		}
+	}
+	result->print_all_v();
+	result->print_all_e();
+	Gplot *Resultgp=new Gplot();
+	Resultgp->gp_add(result->elist);
+	Resultgp->gp_dump(true);
+	Resultgp->gp_export("Resultpath");
 	
     return 0;
 }
 int get_node_count(NetworkManager *nm){
 	Vertex *node;
-	node=nm->get_all_nodes();
+	node=nm->vlist[0];
 	int count=0;
 	while(node!=NULL){
-	//cout<<node->name<<endl;
-	node=node->next;
+	cout<<node->name<<endl;
 	count++;
+	node=nm->vlist[count];
 	}
 	cout<<count<<endl;
 	return count;
@@ -58,7 +151,6 @@ int get_edge_count(NetworkManager *nm){
 	Edge *e;
 	e=nm->elist;
 	while(e!=NULL){
-		//cout<<"Head is "<<e->head->name<<", tail is "<<e->tail->name<<endl;
 		e=e->next;
 		count++;
 	}
@@ -66,24 +158,26 @@ int get_edge_count(NetworkManager *nm){
 	return count;
 }
 
-int Euler_circuit_check(NetworkManager *nm,int v_count,int e_count){
+int Euler_circuit_check(NetworkManager *nm,int v_count,int e_count,int *degree){
 	//Vertex* vlisttmp;
-	Edge* elisttmp;
-	elisttmp=nm->elist;
-	//vlisttmp=nm->get_all_nodes();
-	
-	int vertex_degree[v_count];
+	Edge* e;
+	e=(nm->elist);
+
 	for(int j=0;j<v_count;j++)
-		vertex_degree[j]=0;
+		degree[j]=0;
 	
-	
+	cout<<e_count<<endl;
 	for(int i=0;i<e_count;i++){
-		for(int j=0;j<v_count;j++)
-			if(elisttmp->head==nm->vlist[j] || elisttmp->tail==nm->vlist[j])
-				vertex_degree[j]++;
+		cout<<"Edge head is "<<e->head->name<<", tail is "<<e->tail->name<<endl;
+		for(int j=0;j<v_count;j++){
+			if(e->head==nm->vlist[j] || e->tail==nm->vlist[j]){
+				degree[j]++;
+			}
+		}
+		e=e->next;
 	}
 	for(int j=0;j<v_count;j++){
-		if(vertex_degree[j]%2!=0){
+		if(degree[j]%2!=0){
 			cout<<"The graph is not eulerian\n";
 			return 0;
 		}
@@ -91,4 +185,28 @@ int Euler_circuit_check(NetworkManager *nm,int v_count,int e_count){
 	cout<<"The graph is eulerian\n";
 	return 1;
 
+}
+void vertex_push(Vertex** v_array,Vertex *v,int& sp){
+	cout<<"push"<<v->name<<endl;
+	v_array[sp]=v;
+	sp++;
+}
+Vertex* vertex_pop(Vertex** v_array,int& sp){
+	if(sp!=0){
+		sp--;
+		return v_array[sp];
+	}
+	else
+		return NULL;
+}
+Vertex* findnextnode(NetworkManager *nm,Vertex* curnode,int v_count){
+	for(int i=0;i<v_count;i++)
+		if((nm->connected(curnode->name,nm->vlist[i]->name)==0) && (curnode !=nm->vlist[i])){
+			cout<<"Find node "<<nm->vlist[i]->name<<endl;
+
+			return nm->vlist[i];
+		}
+	cout<<"Not Found any node"<<endl;
+
+	return NULL;
 }
