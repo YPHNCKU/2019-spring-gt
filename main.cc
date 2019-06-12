@@ -17,6 +17,7 @@ int Euler_circuit_check(NetworkManager *nm,int v_count,int e_count,int *degree);
 void vertex_push(Vertex** v_array,Vertex *v,int& sp);
 Vertex* vertex_pop(Vertex** v_array,int& sp);
 Vertex* findnextnode(NetworkManager *nm,Vertex* curnode,int v_count);
+Vertex* vertex_looktop(Vertex** v_array,int& sp);
 int main(int argc, char** argv){
 	
 	if(argc<2){
@@ -57,7 +58,14 @@ int main(int argc, char** argv){
 			cout<<"Connect "<<odd_degree_list[i*2]->name<<" and "<<odd_degree_list[i*2+1]->name<<endl;
 			nm->connect(odd_degree_list[i*2]->name,odd_degree_list[i*2+1]->name);
 		}
+		NetworkManager *subgraph = new NetworkManager();
+		for(int i=0;i<vertex_count;i++){
+			subgraph->add_switch(nm->vlist[i]->name);
+		}
+		for(int i=0;i<edge_count;i++)
+			subgraph->elist;
 	}
+	
 	nm->print_all_v();
 	nm->print_all_e();
 
@@ -76,21 +84,16 @@ int main(int argc, char** argv){
 
 	cout<<"next node is "<<nextnode->name<<endl;
 	vertex_push(tmppath,nextnode,sp1);
-	nm->print_all_e();
 	nm->disconnect(nm->vlist[start_v]->name,nextnode->name);
-	nm->print_all_e();
 	curnode=nextnode;
 	nextnode=findnextnode(nm,curnode,vertex_count);
 	while(nextnode!=NULL){
 		vertex_push(tmppath,nextnode,sp1);
 		if(nm->connected_d(nextnode->name,curnode->name)==0){
-			nm->print_all_e();
 			nm->disconnect(nextnode->name,curnode->name);
 		}
 		else{
-			nm->print_all_e();
 			nm->disconnect(curnode->name,nextnode->name);
-			nm->print_all_e();
 		}
 		curnode=nextnode;
 		nextnode=findnextnode(nm,curnode,vertex_count);
@@ -102,11 +105,13 @@ int main(int argc, char** argv){
 	nm->print_all_e();
 	if(nm->elist!=NULL){
 		curnode=vertex_pop(tmppath,sp1);
-
+		vertex_push(Resultpath,curnode,sp2);
+		curnode=vertex_looktop(tmppath,sp1);
 		while(nm->elist!=NULL){
 			if(findnextnode(nm,curnode,vertex_count)==NULL){
-				vertex_push(Resultpath,curnode,sp2);
 				curnode=vertex_pop(tmppath,sp1);
+				vertex_push(Resultpath,curnode,sp2);
+				
 			}
 			else {
 				nextnode=findnextnode(nm,curnode,vertex_count);
@@ -114,16 +119,12 @@ int main(int argc, char** argv){
 				cout<<"curnode is "<<curnode->name<<endl;
 				cout<<"nextnode is "<<nextnode->name<<endl;
 				if(nm->connected_d(nextnode->name,curnode->name)==0){
-					nm->print_all_e();
 					nm->disconnect(nextnode->name,curnode->name);
-					nm->print_all_e();
-					cout<<"br1"<<endl;
+					//cout<<"br1"<<endl;
 				}
 				else if(nm->connected_d(curnode->name,nextnode->name)==0){
-					nm->print_all_e();
 					nm->disconnect(curnode->name,nextnode->name);
-					nm->print_all_e();
-					cout<<"br2"<<endl;
+					//cout<<"br2"<<endl;
 				}
 				
 				curnode=nextnode;
@@ -219,6 +220,14 @@ Vertex* vertex_pop(Vertex** v_array,int& sp){
 		sp--;
 		cout<<"pop "<<v_array[sp]->name<<endl;
 		return v_array[sp];
+	}
+	else
+		return NULL;
+}
+Vertex* vertex_looktop(Vertex** v_array,int& sp){
+	if(sp!=0){
+		cout<<"top is "<<v_array[sp-1]->name<<endl;
+		return v_array[sp-1];
 	}
 	else
 		return NULL;
