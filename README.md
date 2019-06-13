@@ -34,9 +34,12 @@ Project of course - Graph Theory (EE6622E) in National Cheng Kung University.
 
 ## Result
 
-### Example
-![Alt text](/Example.png)
+### Example1
+Input graph
+![Alt text](/Example1.png)
 
+Output graph
+![Alt text](/Example1_Result.png)
 
-
+The result path is:a->b->c->d->e->b->e->c->a
 
