@@ -18,6 +18,32 @@ void vertex_push(Vertex** v_array,Vertex *v,int& sp);
 Vertex* vertex_pop(Vertex** v_array,int& sp);
 Vertex* findnextnode(NetworkManager *nm,Vertex* curnode,int v_count);
 Vertex* vertex_looktop(Vertex** v_array,int& sp);
+void print(int N,Vertex** a,vector<vector<Vertex*> > &pset)
+{
+    vector<Vertex*> tmp;
+    for (int i=0; i<N; ++i) tmp.push_back(a[i]);
+    pset.push_back(tmp);
+}
+
+void backtrack(int n, int N,Vertex** a,Vertex** element,bool* used,vector<vector<Vertex*> > &pset)
+{
+    if (n == N) {print(N,a,pset); return;}
+
+    for (int i=0; i<N; i++)
+        if (!used[i])
+        {
+            used[i] = true;
+            a[n] = element[i];
+            backtrack(n+1,N,a,element,used,pset);
+            used[i] = false;
+        }
+}
+
+void enumerate_permutations(int N,Vertex** a,Vertex** element,bool* used,vector<vector<Vertex*> > &pset)
+{
+    for (int i=0; i<N; i++) used[i] = false;
+    backtrack(0, N,a,element,used,pset);
+}
 int main(int argc, char** argv){
 	
 	if(argc<2){
@@ -42,6 +68,10 @@ int main(int argc, char** argv){
 	edge_count=get_edge_count(nm);
 	int vertex_degree[vertex_count];
 	//判斷connect
+	//if(connect_check(nm,vertex_count)==0){
+	//	cout<<"The graph is not connect"<<endl;
+	//	return 0;
+	//}
 	if(Euler_circuit_check(nm,vertex_count,edge_count,vertex_degree)==0){
 		//歐拉化
 		int odd_degree_count=0;
@@ -54,17 +84,84 @@ int main(int argc, char** argv){
 			}
 		}
 		int odd_degree_pair=odd_degree_count/2;
-		for(int i=0;i<odd_degree_pair;i++){
-			cout<<"Connect "<<odd_degree_list[i*2]->name<<" and "<<odd_degree_list[i*2+1]->name<<endl;
-			nm->connect(odd_degree_list[i*2]->name,odd_degree_list[i*2+1]->name);
+		if(odd_degree_pair==1 && nm->connected(odd_degree_list[0]->name,odd_degree_list[1]->name)==0)
+			nm->connect(odd_degree_list[0]->name,odd_degree_list[1]->name);
+		else if(odd_degree_pair>=1){
+			NetworkManager *subgraph = new NetworkManager();
+			for(int i=0;i<vertex_count;i++){
+				subgraph->add_switch(nm->vlist[i]->name);
+			}
+			for(int i=0;i<vertex_count;i++)
+				for(int j=i;j<vertex_count;j++)
+					if(nm->connected(nm->vlist[i]->name,nm->vlist[j]->name)==0){
+						subgraph->connect(nm->vlist[j]->name,nm->vlist[i]->name);
+						subgraph->connect(nm->vlist[i]->name,nm->vlist[j]->name);
+					}
+			
+			Gplot *bidirectgp=new Gplot();
+			bidirectgp->gp_add(subgraph->elist);
+			bidirectgp->gp_dump(true);
+			bidirectgp->gp_export("bidirectgraph");
+			int combination_count;
+			
+			
+			//找出所有排列
+			
+			Vertex* a[odd_degree_count];
+			bool used[odd_degree_count];
+			for(int i=0;i<odd_degree_count;i++)
+				used[odd_degree_count]=0;
+			vector<vector<Vertex*> > pset;
+			enumerate_permutations(odd_degree_count,a,odd_degree_list,used,pset);
+			cout<<"Num of point_permutation: "<<pset.size()<<endl;
+			cout<<"Num of point: "<<pset[0].size()<<endl;
+			int total_add_path[pset.size()];
+			combination_count=pset.size();
+			//Vertex* vertex_permutation[combination_count][odd_degree_count];
+			/*for(int i=0;i<pset.size();i++){
+				for(int j=0;j<pset[i].size();j++){
+					cout<<" ["<<pset[i][j]<<"],";
+				}
+				cout<<endl;
+			}	*/
+			//Calculate all path
+			int path_sum=0;
+			Path *path;
+			path=new Path();
+			path->append(subgraph->elist);
+			vector<vector<Edge *> > path1;
+			for(int i=0;i<combination_count;i++){
+				for(int j=0;j<odd_degree_pair;j++){
+					
+					path1=path->find_paths(pset[i][j*2]->name, pset[i][j*2+1]->name);
+					path_sum+=path1[path1.size()-1].size();
+					path1.clear();
+				}
+				total_add_path[i]=path_sum;
+				path_sum=0;
+			}
+			int min_path_pair;
+			int tmp=1000;
+			//Find the shortest solution
+			for(int i=0;i<combination_count;i++){
+				if(total_add_path[i]<tmp)
+					min_path_pair=i;
+			}
+			//Add edge to graph
+			for(int j=0;j<odd_degree_pair;j++){
+					path1=path->find_paths(pset[min_path_pair][j*2]->name, pset[min_path_pair][j*2+1]->name);
+					cout<<"Add path: "<<j<<endl;
+					for(int i=0;i<path1[path1.size()-1].size();i++)
+						nm->connect(path1[path1.size()-1][i]->head->name,path1[path1.size()-1][i]->tail->name);
+			}
+			
+			//path->debug();
+			//cout<<avail_paths[0][0]->head->name<<"   "<<avail_paths[0][0]->tail->name<<endl;
+			//cout<<avail_paths.size()<<endl;
 		}
-		NetworkManager *subgraph = new NetworkManager();
-		for(int i=0;i<vertex_count;i++){
-			subgraph->add_switch(nm->vlist[i]->name);
-		}
-		for(int i=0;i<edge_count;i++)
-			subgraph->elist;
 	}
+	edge_count=get_edge_count(nm);
+	Euler_circuit_check(nm,vertex_count,edge_count,vertex_degree);
 	
 	nm->print_all_v();
 	nm->print_all_e();
@@ -111,7 +208,7 @@ int main(int argc, char** argv){
 			if(findnextnode(nm,curnode,vertex_count)==NULL){
 				curnode=vertex_pop(tmppath,sp1);
 				vertex_push(Resultpath,curnode,sp2);
-				
+				curnode=vertex_looktop(tmppath,sp1);
 			}
 			else {
 				nextnode=findnextnode(nm,curnode,vertex_count);
@@ -120,11 +217,9 @@ int main(int argc, char** argv){
 				cout<<"nextnode is "<<nextnode->name<<endl;
 				if(nm->connected_d(nextnode->name,curnode->name)==0){
 					nm->disconnect(nextnode->name,curnode->name);
-					//cout<<"br1"<<endl;
 				}
 				else if(nm->connected_d(curnode->name,nextnode->name)==0){
 					nm->disconnect(curnode->name,nextnode->name);
-					//cout<<"br2"<<endl;
 				}
 				
 				curnode=nextnode;
