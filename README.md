@@ -16,12 +16,34 @@ Project of course - Graph Theory (EE6622E) in National Cheng Kung University.
 
 ## Program
 程式的輸入是fake-mininet提供的圖格式，而程式輸出的結果會包含輸入圖的dot格式文件、計算結果的dot格式文件、輸出路徑的純文字檔案
+<br>
+`make` 後使用  `main.out <Inputgraph>` 執行程式。
+<br>
+程式會印出結果，並輸出文件
+<br>
 此程式有以下注意事項:
-1.當一張圖的奇數degree點為10個以上，程式無法正確
+1.當一張圖的奇數degree點為10個以上，程式無法正確執行
 2.程式無法處理一開始就包含多重邊的圖片
+
+自訂函式:
+* `int get_node_count(NetworkManager *nm)`:可以得到graph的頂點數
+* `int get_edge_count(NetworkManager *nm)`:可以得到graph的邊數
+* `int Euler_circuit_check(NetworkManager *nm,int v_count,int e_count,int *degree)`: 檢查圖是否為歐拉圖
+* `void vertex_push(Vertex** v_array,Vertex *v,int& sp)`:將元素放入堆疊
+* `Vertex* vertex_pop(Vertex** v_array,int& sp)`:將元素從堆疊取出
+* `Vertex* vertex_looktop(Vertex** v_array,int& sp)`:查看堆疊最上方的元素
+* `Vertex* findnextnode(NetworkManager *nm,Vertex* curnode,int v_count)`:可以找出某點是否有鄰點
+
+以下三個函式使用遞迴的方式找出排列
+* `void print(int N,Vertex** a,vector<vector<Vertex*> > &pset)`
+* `void backtrack(int n, int N,Vertex** a,Vertex** element,bool* used,vector<vector<Vertex*> > &pset)`
+* `void enumerate_permutations(int N,Vertex** a,Vertex** element,bool* used,vector<vector<Vertex*> > &pset)`
 	
 
 ## Algorithm
+1.先檢查圖是否為連接圖，若不是則程式結束，若是則繼續下一步
+2.檢查圖的degree是否存在奇數，如果有則進行歐拉化，若沒有則直接進行下一步
+3.在確定為歐拉圖的圖上找到歐拉迴圈，此歐拉迴圈就是此問題的解
 
 ### 1.歐拉化
 將一張圖轉為所有點的degree都是偶數的圖
@@ -54,15 +76,21 @@ Project of course - Graph Theory (EE6622E) in National Cheng Kung University.
 ## Result
 
 ### Example1
+助教提供的測試資料
+<br>
 Input graph
+
 ![](/Example1.png)
 
 Output graph
+
 ![](/Example1_Result.png)
 
 The result path is:a->b->c->d->e->b->e->c->a
 
 ### Example2
+一張奇數degree有8個點的圖
+<br>
 Input graph
 
 ![](/Example2.png)
