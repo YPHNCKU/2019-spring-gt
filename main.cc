@@ -58,6 +58,35 @@ int main(int argc, char** argv){
 	vertex_count=get_node_count(nm);
 	edge_count=get_edge_count(nm);
 	int vertex_degree[vertex_count];
+	
+	NetworkManager *subgraph = new NetworkManager();
+	for(int i=0;i<vertex_count;i++){
+		subgraph->add_switch(nm->vlist[i]->name);
+	}
+	for(int i=0;i<vertex_count;i++)
+		for(int j=i;j<vertex_count;j++)
+			if(nm->connected(nm->vlist[i]->name,nm->vlist[j]->name)==0){
+				subgraph->connect(nm->vlist[j]->name,nm->vlist[i]->name);
+				subgraph->connect(nm->vlist[i]->name,nm->vlist[j]->name);
+			}	
+	
+	Path *path_check;
+	path_check=new Path();
+	path_check->append(subgraph->elist);
+	vector<vector<Edge *> > path_check1;
+	
+	for(int i=0;i<vertex_count-1;i++)
+		for(int j=i+1;j<vertex_count;j++){
+			path_check1=path_check->find_paths(nm->vlist[i]->name, nm->vlist[j]->name);
+			if(path_check1.size()==0){
+				cout<<"The following nodes have no path"<<endl;
+				cout<<"Node: "<<nm->vlist[i]->name<<" and Node: "<<nm->vlist[j]->name<<endl;
+				cout<<"This graph is no connect"<<endl;
+				return 0;
+			}
+			
+		}
+			
 
 	cout<<"======================================================\n";
 	cout<<"Check Eularian"<<endl;
@@ -85,17 +114,7 @@ int main(int argc, char** argv){
 		if(odd_degree_pair==1 && nm->connected(odd_degree_list[0]->name,odd_degree_list[1]->name)==0)
 			nm->connect(odd_degree_list[0]->name,odd_degree_list[1]->name);
 		else if(odd_degree_pair>=1){
-			NetworkManager *subgraph = new NetworkManager();
-			for(int i=0;i<vertex_count;i++){
-				subgraph->add_switch(nm->vlist[i]->name);
-			}
-			for(int i=0;i<vertex_count;i++)
-				for(int j=i;j<vertex_count;j++)
-					if(nm->connected(nm->vlist[i]->name,nm->vlist[j]->name)==0){
-						subgraph->connect(nm->vlist[j]->name,nm->vlist[i]->name);
-						subgraph->connect(nm->vlist[i]->name,nm->vlist[j]->name);
-					}
-			
+		
 			int combination_count;
 			
 			
