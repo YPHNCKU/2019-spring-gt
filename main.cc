@@ -50,7 +50,7 @@ int main(int argc, char** argv){
 	Gplot *Inputgp=new Gplot();
 	Inputgp->gp_add(nm->elist);
 	Inputgp->gp_dump(true);
-	Inputgp->gp_export("inputgraph");
+	Inputgp->gp_export("Inputgraph");
 	int start_v;
 	int vertex_count;
 	int edge_count;
@@ -227,13 +227,15 @@ int main(int argc, char** argv){
 	}
 	fstream out;
 	out.open("Result_path.txt",ios::out);
-	out<<"The result path is:"<<endl;
-	//cout<<"The result path is:"<<endl;
+	out<<"The shortest path is "<<endl;
+	
 	NetworkManager *result= new NetworkManager();
 	nextnode=vertex_pop(Resultpath,sp2);
+	vector<string> shortest_path_node;
 	while(nextnode!=NULL){
 		curnode=nextnode;
 		result->add_switch(curnode->name);
+		shortest_path_node.push_back(curnode->name);
 		//cout<<curnode->name;
 		out<<curnode->name;
 		nextnode=vertex_pop(Resultpath,sp2);
@@ -247,14 +249,24 @@ int main(int argc, char** argv){
 	out<<endl;
 	result->print_all_v();
 	result->print_all_e();
+	
+	
 	Gplot *Resultgp=new Gplot();
 	Resultgp->gp_add(result->elist);
 	Resultgp->gp_dump(true);
 	Resultgp->gp_export("Resultpath");
 	out.close();
+	cout<<"\n======================================================\n";
+	cout<<"The shortest path:"<<endl;
+	cout<<"======================================================\n";
+	for(int i=0;i<shortest_path_node.size()-1;i++)
+		cout<<shortest_path_node[i]<<" -> ";
+	cout<<shortest_path_node.back()<<endl;
 	cout<<"\n\n";
-	cout<<"Save Result path in Result_path.txt"<<endl;
 	
+	cout<<"Save Input graph in Inputgraph.dot"<<endl;
+	cout<<"Save Result graph in Resultpath.dot"<<endl;
+	cout<<"Save Result path in Result_path.txt"<<endl;
     return 0;
 }
 int get_node_count(NetworkManager *nm){
