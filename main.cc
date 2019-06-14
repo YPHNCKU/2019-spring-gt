@@ -15,17 +15,17 @@ using namespace std;
 NetworkManager *nm = new NetworkManager();
 
 //Graph check
-int get_node_count(NetworkManager *nm);
-int get_edge_count(NetworkManager *nm);
+int get_node_count(NetworkManager *nm); //get the number of nodes in graph 
+int get_edge_count(NetworkManager *nm); //get the number of edges in graph 
 int Euler_circuit_check(NetworkManager *nm,int v_count,int e_count,int *degree);
 
 //Stack operation
-void vertex_push(Vertex** v_array,Vertex *v,int& sp);
-Vertex* vertex_pop(Vertex** v_array,int& sp);
-Vertex* vertex_looktop(Vertex** v_array,int& sp);
+void vertex_push(Vertex** v_array,Vertex *v,int& sp); //Push into stack
+Vertex* vertex_pop(Vertex** v_array,int& sp);  // pop out from stack
+Vertex* vertex_looktop(Vertex** v_array,int& sp); // look the top element in stack
 
 //Find node
-Vertex* findnextnode(NetworkManager *nm,Vertex* curnode,int v_count);
+Vertex* findnextnode(NetworkManager *nm,Vertex* curnode,int v_count); 
 
 //Permutation
 void print(int N,Vertex** a,vector<vector<Vertex*> > &pset);
@@ -59,6 +59,8 @@ int main(int argc, char** argv){
 	edge_count=get_edge_count(nm);
 	int vertex_degree[vertex_count];
 	
+	// generate a bidirected graph from input graph
+	
 	NetworkManager *subgraph = new NetworkManager();
 	for(int i=0;i<vertex_count;i++){
 		subgraph->add_switch(nm->vlist[i]->name);
@@ -70,11 +72,12 @@ int main(int argc, char** argv){
 				subgraph->connect(nm->vlist[i]->name,nm->vlist[j]->name);
 			}	
 	
+	
 	Path *path_check;
 	path_check=new Path();
 	path_check->append(subgraph->elist);
 	vector<vector<Edge *> > path_check1;
-	
+	// Check the graph is connect graph or not
 	for(int i=0;i<vertex_count-1;i++)
 		for(int j=i+1;j<vertex_count;j++){
 			path_check1=path_check->find_paths(nm->vlist[i]->name, nm->vlist[j]->name);
@@ -98,8 +101,9 @@ int main(int argc, char** argv){
 			cout<<"The graph is not connect. The problem cannot be solved."<<endl;
 			return 0;
 		}
+	// if the graph is not eulerian, add edges to graph. And it will become Eularian
 	if(Euler_circuit_check(nm,vertex_count,edge_count,vertex_degree)==0){
-		//歐拉化
+		
 		int odd_degree_count=0;
 		Vertex *odd_degree_list[vertex_count];
 		for(int i=0;i<vertex_count;i++){
@@ -118,7 +122,7 @@ int main(int argc, char** argv){
 			int combination_count;
 			
 			
-			//找出所有排列
+			//enumerate_permutations all permutation of the odd degree nodes pairs
 			
 			Vertex* a[odd_degree_count];
 			bool used[odd_degree_count];
@@ -166,6 +170,8 @@ int main(int argc, char** argv){
 
 		}
 	}
+	
+	//Update edge count
 	edge_count=get_edge_count(nm);
 	
 	
@@ -177,16 +183,18 @@ int main(int argc, char** argv){
 	//Find Euler_circuit;
 	start_v=0;
 	Vertex *nextnode,*curnode;
-	Vertex* tmppath[edge_count+1];
-	Vertex* Resultpath[edge_count+1];
-	int sp1=0;
+	Vertex* tmppath[edge_count+1];	//stack 1
+	Vertex* Resultpath[edge_count+1]; //stack 2
+	int sp1=0; 
 	int sp2=0;
+	
+	//Find a eularcircuit
 	vertex_push(tmppath,nm->vlist[start_v],sp1);
 	curnode=nm->vlist[start_v];
 	//cout<<"cur node is "<<curnode->name<<endl;
 	nextnode=findnextnode(nm,curnode,vertex_count);
 
-	//cout<<"next node is "<<nextnode->name<<endl;
+	//cout<<"next node is "<<nextnode->name<<endl
 	vertex_push(tmppath,nextnode,sp1);
 	nm->disconnect(nm->vlist[start_v]->name,nextnode->name);
 	curnode=nextnode;
