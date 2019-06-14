@@ -64,9 +64,11 @@ The result path is:a->b->c->d->e->b->e->c->a
 
 ### Example2
 Input graph
+
 ![](/Example2.png)
 
 Output graph
+
 ![](/Example2_Result.png)
 
 The result path is: a -> b -> a -> c -> a -> d -> a -> e -> a -> f -> a -> g -> a -> h -> a -> i -> a
